@@ -1,0 +1,15 @@
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: <TASK_DEFINITION>
+        LoadBalancerInfo:
+          ContainerName: "$CONTAINER_NAME"
+          ContainerPort: 5000
+        BuildProject:
+          Properties:
+            ServiceRole: "arn:aws:iam::445567079138:role/iam-role-rumana"
+        Pipeline:
+          Properties:
+            RoleArn: "arn:aws:iam::445567079138:role/iam-role-rumana" 
