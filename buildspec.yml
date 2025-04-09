@@ -6,10 +6,6 @@ env:
     REPOSITORY_URI: "474668427249.dkr.ecr.ca-central-1.amazonaws.com/lab5/irene-ecr"
 
 phases:
-  install:
-    commands:
-      - yum install -y docker
-      - service docker start
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
@@ -17,11 +13,13 @@ phases:
       - echo Logging into $REPOSITORY_URI
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
       - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
+
   post_build:
     commands:
       - echo Build completed on `date`
