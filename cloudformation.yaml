@@ -179,7 +179,7 @@ Resources:
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
-      ExecutionRoleArn: "arn:aws:iam::474668427249:role/final-irene-exam-role"
+      ExecutionRoleArn: "arn:aws:iam::445567079138:role/iam-role-rumana"
       ContainerDefinitions:
         - Name: wildrydes-app
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/wildrydes-repo:latest
@@ -260,7 +260,7 @@ Resources:
     DependsOn: ECRRepository
     Properties:
       Name: WildRydesBuild
-      ServiceRole: "arn:aws:iam::474668427249:role/final-irene-exam-role"
+      ServiceRole: "arn:aws:iam::445567079138:role/iam-role-rumana"
       Artifacts:
         Type: CODEPIPELINE
       Environment:
@@ -311,7 +311,7 @@ Resources:
     Type: AWS::CodePipeline::Pipeline
     Properties:
       Name: WildRydesPipeline
-      RoleArn: "arn:aws:iam::474668427249:role/final-irene-exam-role"
+      RoleArn: "arn:aws:iam::445567079138:role/iam-role-rumana"
       ArtifactStore:
         Type: S3
         Location: !Ref ArtifactBucket
