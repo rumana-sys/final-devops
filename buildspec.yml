@@ -29,7 +29,11 @@ phases:
       - |
         echo '[ 
           { 
+<<<<<<< HEAD
             "name": "wildrydes-app", 
+=======
+            "name": "wildrydes-repo", 
+>>>>>>> 6ad9e0a6c1058f86fc4411306afddd33a7d2ef0a
             "imageUri": "'$REPOSITORY_URI:$IMAGE_TAG'" 
           } 
         ]' > imagedefinitions.json
