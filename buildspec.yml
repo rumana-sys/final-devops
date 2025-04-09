@@ -1,29 +1,18 @@
 version: 0.2
 phases:
+  install:
+    commands:
+      - command: yum install -y docker
+      - command: service docker start
   pre_build:
     commands:
-      - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=${COMMIT_HASH:=latest}
-      - echo "Repository URI: $REPOSITORY_URI"
-      - aws ecr describe-repositories || echo "Repository might not exist"
+      - command: aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
   build:
     commands:
-      - echo Building the Docker image...
-      - docker build -t $REPOSITORY_URI:latest .
-      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
-      - docker images
+      - command: docker build -t $REPOSITORY_URI:latest .
   post_build:
     commands:
-      - echo Pushing the Docker image...
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
-      - docker push $REPOSITORY_URI:latest || echo "Push failed with status $?"
-      - docker push $REPOSITORY_URI:$IMAGE_TAG || echo "Push failed with status $?"
-      - echo Writing image definitions file...
-      - aws ecs describe-task-definition --task-definition WildRydesTaskDefinition --query taskDefinition > taskdef.json
-      - envsubst < appspec_template.yaml > appspec.yaml
-      - cat appspec.yaml
+      - command: docker push $REPOSITORY_URI:latest
 artifacts:
   files:
     - appspec.yaml
