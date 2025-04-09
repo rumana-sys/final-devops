@@ -29,7 +29,7 @@ phases:
       - |
         echo '[ 
           { 
-            "name": "irene-ecr", 
+            "name": "wildrydes-repo", 
             "imageUri": "'$REPOSITORY_URI:$IMAGE_TAG'" 
           } 
         ]' > imagedefinitions.json
