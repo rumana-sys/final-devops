@@ -3,7 +3,7 @@ version: 0.2
 env:
   variables:
     AWS_DEFAULT_REGION: "ca-central-1"
-    REPOSITORY_URI: "474668427249.dkr.ecr.ca-central-1.amazonaws.com/lab5/irene-ecr"
+    REPOSITORY_URI: "445567079138.dkr.ecr.ca-central-1.amazonaws.com/wildrydes-repo"
 
 phases:
   pre_build:
