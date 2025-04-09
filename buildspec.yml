@@ -2,17 +2,17 @@ version: 0.2
 phases:
   install:
     commands:
-      - command: yum install -y docker
-      - command: service docker start
+      - yum install -y docker
+      - service docker start
   pre_build:
     commands:
-      - command: aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
   build:
     commands:
-      - command: docker build -t $REPOSITORY_URI:latest .
+      - docker build -t $REPOSITORY_URI:latest .
   post_build:
     commands:
-      - command: docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:latest
 artifacts:
   files:
     - appspec.yaml
