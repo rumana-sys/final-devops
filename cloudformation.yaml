@@ -270,46 +270,41 @@ Resources:
         PrivilegedMode: true
         EnvironmentVariables:
           - Name: REPOSITORY_URI
-            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/wildrydes-repo
+            Value: "445567079138.dkr.ecr.ca-central-1.amazonaws.com/wildrydes-repo"
           - Name: CONTAINER_NAME
             Value: wildrydes-app
+          - Name: IMAGE_NAME
+            Value: IMAGE1_NAME
       Source:
         Type: CODEPIPELINE
-        BuildSpec: |
+        BuildSpec: >
           version: 0.2
-          env:
-            variables:
-              AWS_DEFAULT_REGION: "ca-central-1"
-              REPOSITORY_URI: "445567079138.dkr.ecr.ca-central-1.amazonaws.com/wildrydes-repo"
           phases:
+            install:
+              runtime-versions:
+                python: 3.8
             pre_build:
               commands:
-                - echo Logging in to Amazon ECR...
-                - aws --version
-                - echo Logging into $REPOSITORY_URI
+                - echo Logging in to Amazon ECR
                 - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
-                - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
             build:
               commands:
-                - echo Build started on `date`
-                - echo Building the Docker image...
-                - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
+                - echo Building image
+                - docker build -t $REPOSITORY_URI:latest .
+                - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:latest
             post_build:
               commands:
-                - echo Build completed on `date`
-                - echo Pushing the Docker image to ECR...
-                - docker push $REPOSITORY_URI:$IMAGE_TAG
-                - echo "Creating imagedefinitions.json..."
-                - |
-                  echo '[ 
-                    { 
-                      "name": "wildrydes-app", 
-                      "imageUri": "'$REPOSITORY_URI:$IMAGE_TAG'" 
-                    } 
-                  ]' > imagedefinitions.json
+                - echo Pushing image
+                - docker push $REPOSITORY_URI:latest
+                - echo Preparing deployment files
+                - aws ecs describe-task-definition --task-definition WildRydesTaskDefinition --query taskDefinition > taskdef.json
+                - sed -i "s|<TASK_DEFINITION>|WildRydesTaskDefinition|g" appspec.yaml
+                - cat appspec.yaml
+                - cp appspec.yaml appspec_processed.yaml
           artifacts:
             files:
-              - imagedefinitions.json
+              - appspec_processed.yaml
+              - taskdef.json
 
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -355,14 +350,47 @@ Resources:
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
-                Provider: ECS
+                Provider: CodeDeployToECS
                 Version: '1'
               Configuration:
-                ClusterName: !Ref ECSCluster
-                ServiceName: !Ref ECSService
-                FileName: appspec.yaml
+                ApplicationName: !Ref ECSDeploymentApplication
+                DeploymentGroupName: !Ref ECSDeploymentGroup
+                AppSpecTemplateArtifact: BuildOutput
+                AppSpecTemplatePath: appspec_processed.yaml
+                TaskDefinitionTemplateArtifact: BuildOutput
+                TaskDefinitionTemplatePath: taskdef.json
+                Image1ArtifactName: BuildOutput
+                Image1ContainerName: wildrydes-app
               InputArtifacts:
                 - Name: BuildOutput
+              RunOrder: 1
+
+  # CodeDeploy Resources for ECS
+  ECSDeploymentApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: WildRydesECSDeployment
+      ComputePlatform: ECS
+
+  ECSDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref ECSDeploymentApplication
+      DeploymentGroupName: WildRydesECSDeploymentGroup
+      DeploymentConfigName: CodeDeployDefault.ECSAllAtOnce
+      ServiceRoleArn: "arn:aws:iam::445567079138:role/iam-role-rumana"
+      BlueGreenDeploymentConfiguration:
+        DeploymentReadyOption:
+          ActionOnTimeout: CONTINUE_DEPLOYMENT
+        TerminateBlueInstancesOnDeploymentSuccess:
+          Action: TERMINATE
+          TerminationWaitTimeInMinutes: 5
+      ECSServices:
+        - ClusterName: !Ref ECSCluster
+          ServiceName: !Ref ECSService
+      DeploymentStyle:
+        DeploymentType: BLUE_GREEN
+        DeploymentOption: WITH_TRAFFIC_CONTROL
 
   # CloudWatch Alarms
   BuildFailureAlarm:
