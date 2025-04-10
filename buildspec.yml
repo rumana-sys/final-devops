@@ -8,8 +8,6 @@ env:
 phases:
   pre_build:
     commands:
-      - echo "Logging in to Amazon ECR..."
-      - aws --version
       - echo "Logging into ECR repository: $REPOSITORY_URI"
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
       - export IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
@@ -18,13 +16,11 @@ phases:
   build:
     commands:
       - echo "Build started on $(date)"
-      - echo "Building the Docker image..."
       - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
 
   post_build:
     commands:
-      - echo "Build completed on $(date)"
-      - echo "Pushing the Docker image to ECR..."
+      - echo "Pushing Docker image to ECR..."
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo "Creating imagedefinitions.json..."
       - |
